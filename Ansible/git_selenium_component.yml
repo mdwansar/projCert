@@ -1,0 +1,71 @@
+---
+- name: install selenium with chromedriver
+  hosts: slave
+  become: true
+  become_method: sudo
+  become_user: root
+  tasks:
+          - name: Upgrade all packages to the latest version
+            apt:
+              upgrade: dist
+          - name: install unzip xvfb libxi6 libgconf-2-4
+            apt:
+             name: "{{items}}"
+            vars:
+               items:
+                - git
+                - unzip
+                - xvfb
+                - libxi6
+                - libgconf-2-4
+                - default-jdk
+
+          - name: Add an Apt signing key, uses whichever key is at the URL
+            apt_key:
+             url: https://dl-ssl.google.com/linux/linux_signing_key.pub
+             state: present
+
+          - name: add chrome-list
+            command: echo "deb [arch=amd64]  http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+
+          - name: Upgrade all packages to the latest version
+            apt:
+             upgrade: dist
+
+          - name: Upgrade all packages to the latest version
+            apt:
+             name: google-chrome-stable
+             state: present
+
+          - name: Download chromedriver_linux64.zip
+            get_url:
+             url: https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
+             dest: /tmp/
+             mode: 700
+
+          - name: Extract chromedriver_linux64
+            unarchive:
+                    src: /tmp/chromedriver_linux64.zip
+                    dest: /tmp/
+                    mode: 700
+                    remote_src: yes
+
+          - name: copy the chromedriver
+            copy:
+             remote_src: yes
+             src: /tmp/chromedriver
+             dest: /usr/bin/chromedriver
+             owner: root
+             group: root
+             mode: 0751
+
+
+          - name: remove the source file
+            file:
+                    path: /tmp/chromedriver
+                    state: absent
+
+          - name: remove the zip file
+            file:
+                    path: /tmp/chromedriver_linux64.zip
+                    state: absent
